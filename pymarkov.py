@@ -1,4 +1,6 @@
 import sys
+import pickle
+import os.path
 from collections import defaultdict
 from random import choice, randrange
 from itertools import izip, islice
@@ -6,27 +8,50 @@ from collections import Counter
 
 from nltk.tokenize import sent_tokenize, word_tokenize
 
-class MarkovChainGenerator(object):
 
+def pickled(func):
+
+    def wrapper(other, file_name):
+        root, ext = os.path.splitext(file_name)
+        pickled_file_name = root + '-pickled' + ext
+        try:
+            with open(pickled_file_name) as f:
+                result = pickle.load(f)
+        except IOError:
+            #so create file
+            result = func(other, file_name)
+            with open(pickled_file_name, 'w') as f:
+                pickle.dump(result, f)
+        return result
+
+    return wrapper
+
+
+class MarkovChainGenerator(object):
     def __init__(self, file_name, k=2):
         self.gram_length = k
-        self.gram_dict = defaultdict(Counter)
-        self.populate_dict(file_name)
+        self.gram_dict = self.populate_dict(file_name)
 
+    @pickled
     def populate_dict(self, file_name):
         """ (file_name) -> None
-        Creates and populates self.gram_dict
+        Creates and populates gram_dict
         """
+        gram_dict = defaultdict(Counter)
         with open(file_name) as word_file:
             text = word_file.read()
             for sent in sent_tokenize(text):
                 if sent.isupper():
                     continue
                 words = [None] + word_tokenize(sent) + [None]
-                for word_tuple in izip(*[words[i:] for i in range(self.gram_length + 1)]):
+                zipped = izip(*[words[i:]
+                                for i in range(self.gram_length + 1)])
+                for word_tuple in zipped:
                     gram = word_tuple[:self.gram_length]
                     word = word_tuple[self.gram_length]
-                    self.gram_dict[gram][word] += 1
+                    gram_dict[gram][word] += 1
+
+        return gram_dict
 
     def generate_sentence(self):
         """ () -> [string]
@@ -56,4 +81,3 @@ if __name__ == '__main__':
     #print(a.gram_dict)
     for _ in range(int(sys.argv[1])):
         print(a.generate_sentence())
-
