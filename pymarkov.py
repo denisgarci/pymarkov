@@ -64,7 +64,7 @@ class MarkovChainGenerator(object):
         while True:
             next_word = self.random_word(self.gram_dict[current_gram])
             if next_word is None:
-                return ' '.join(sentence)
+                return "".join([" " + i if not i.startswith("'") and i not in string.punctuation else i for i in sentence]).strip()
             sentence.append(next_word)
             current_gram = tuple(sentence[-self.gram_length:])
 
