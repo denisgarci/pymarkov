@@ -1,4 +1,5 @@
 import sys
+import string
 import pickle
 import os.path
 from collections import defaultdict
@@ -64,7 +65,7 @@ class MarkovChainGenerator(object):
         while True:
             next_word = self.random_word(self.gram_dict[current_gram])
             if next_word is None:
-                return ' '.join(sentence)
+                return ''.join(' ' + w if not w.startswith("'") and w not in string.punctuation else w for w in sentence).strip()
             sentence.append(next_word)
             current_gram = tuple(sentence[-self.gram_length:])
 
